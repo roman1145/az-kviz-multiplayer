@@ -9,44 +9,56 @@
 <body>
 
     <div class="game-container">
-        <!-- 1. ÚVODNÍ OBRAZOVKA -->
+        <!-- 1. ÚVODNÍ ROZCESTNÍK -->
         <div id="screen-intro" class="screen">
+            <div class="badge">🌐 Interaktivní televizní vědomostní hra</div>
             <h1>AZ-KVÍZ</h1>
-            <p class="subtitle">Vytvořte si vlastní kvíz, hrajte online na 2 zařízeních s přáteli.</p>
+            <p class="subtitle">Vytvořte si vlastní kvíz pro výuku, na párty s přáteli nebo firemní teambuilding. Jednoduše, přehledně a s moderním designem.</p>
             
             <div class="intro-grid">
-                <div class="intro-card setup">
-                    <h3>➕ Vytvořit nový AZ-kvíz</h3>
-                    <button id="btn-create-quiz" class="btn primary">Vytvořit kvíz</button>
+                <div class="intro-card">
+                    <div class="card-icon blue">➕</div>
+                    <h3>Vytvořit nový AZ-kvíz</h3>
+                    <p>Přehledný průvodce tvorbou: zadejte otázky a správné odpovědi.</p>
+                    <button id="btn-create-quiz" class="btn primary">+ Vytvořit kvíz</button>
                 </div>
-                <div class="intro-card upload">
-                    <h3>📤 Nahrát ze souboru</h3>
+                <div class="intro-card">
+                    <div class="card-icon black">↑</div>
+                    <h3>Nahrát ze souboru</h3>
+                    <p>Máte již uloženou hru v počítači? Nahrajte soubor a můžete ihned hrát.</p>
                     <label class="btn secondary">
-                        Vybrat soubor (JSON)
+                        💾 Vybrat soubor
                         <input type="file" id="upload-questions-input" accept=".json" style="display: none;">
                     </label>
                 </div>
             </div>
         </div>
 
-        <!-- 2. PRŮVODCE TVORBOU OTÁZEK -->
+        <!-- 2. TVORBA OTÁZEK -->
         <div id="screen-creator" class="screen" style="display: none;">
             <h2>Krok 2: Hlavní otázky (28)</h2>
+            <p class="creator-desc">Kliknutím na jakékoliv číslo pole vytvoříte nebo upravíte otázku. Pro přechod do hry musíte vyplnit všech 28 otázek.</p>
+            
             <div class="creator-actions">
                 <button id="btn-download-json" class="btn success">💾 Uložit do souboru</button>
-                <button id="btn-start-game" class="btn primary" style="display: none;">🎮 Přejít ke hře</button>
+                <button id="btn-start-game" class="btn primary" style="display: none;">Pokračovat k týmu a startu →</button>
             </div>
+            
             <div id="creator-grid" class="creator-grid"></div>
         </div>
 
-        <!-- MODÁLNÍ OKNO PRO ZÁPIS JEDNÉ OTÁZKY -->
+        <!-- MODÁLNÍ OKNO PRO ZÁPIS OTÁZKY -->
         <div id="creator-modal" class="modal" style="display: none;">
             <div class="modal-content">
                 <h3 id="modal-title">Nová: Otázka č. 1</h3>
-                <label>Znění otázky *</label>
-                <textarea id="input-q-text" placeholder="Např. Jak se jmenuje nejdelší řeka protékající Českou republikou?"></textarea>
-                <label>Správná odpověď *</label>
-                <input type="text" id="input-q-answer" placeholder="Např. Vltava">
+                <div class="form-group">
+                    <label>Znění otázky *</label>
+                    <textarea id="input-q-text" placeholder="Např. Jak se jmenuje nejdelší řeka protékající Českou republikou?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Správná odpověď *</label>
+                    <input type="text" id="input-q-answer" placeholder="Např. Vltava">
+                </div>
                 <div class="modal-buttons">
                     <button id="btn-modal-cancel" class="btn danger">Zrušit</button>
                     <button id="btn-modal-save" class="btn success">✔️ Uložit otázku</button>
@@ -54,20 +66,46 @@
             </div>
         </div>
 
-        <!-- 3. HERNÍ OBRAZOVKA (MULTIPLAYER) -->
+        <!-- 3. MULTIPLAYER HRA -->
         <div id="screen-game" class="screen" style="display: none;">
-            <div id="status-bar">Čekání na připojení hráčů...</div>
-            
-            <!-- Herní deska z šestiúhelníků -->
-            <div id="az-pyramid"></div>
+            <!-- Horní panel týmů přesně podle předlohy -->
+            <div class="teams-score-board">
+                <div class="team-panel red">🔴 Červený tým</div>
+                <div class="game-logo-center">AZ-KVÍZ</div>
+                <div class="team-panel blue">🔵 Modrý tým</div>
+            </div>
 
-            <!-- Box s aktivní otázkou během hry -->
+            <div id="status-bar">Na řadě je: ČERVENÝ TÝM</div>
+            
+            <!-- Herní deska -->
+            <div class="pyramid-container">
+                <div id="az-pyramid"></div>
+            </div>
+
+            <!-- Okno s otázkou během aktivní hry -->
             <div id="game-question-box" class="question-box" style="display: none;">
-                <h3 id="game-question-title">Otázka č. X</h3>
-                <p id="game-question-text">Text...</p>
-                <div id="game-answer-zone">
-                    <input type="text" id="game-player-answer" placeholder="Napište odpověď...">
-                    <button id="btn-game-submit" class="btn success">Odeslat</button>
+                <h2 id="game-question-title">Otázka č. X</h2>
+                <div id="game-question-text" class="question-text-display">Text...</div>
+                
+                <!-- Zóna pro skryté řešení a odpověď -->
+                <div id="game-interactive-zone">
+                    <button id="btn-reveal-solution" class="btn warning">👁️ Zobrazit správné řešení</button>
+                    <div id="solution-reveal-text" style="display: none;"></div>
+
+                    <div class="answer-input-wrapper">
+                        <input type="text" id="game-player-answer" placeholder="Zadejte odpověď pro kontrolu...">
+                        <button id="btn-game-submit" class="btn success">Odeslat a zkontrolovat</button>
+                    </div>
+                    
+                    <!-- Ruční rozhodnutí moderátora/týmu podle obrázku -->
+                    <div class="manual-controls">
+                        <p>Pokud neodpovídáte textově, přiřaďte políčko ručně:</p>
+                        <div class="manual-btn-group">
+                            <button id="btn-manual-red" class="btn danger">🔴 Červený tým</button>
+                            <button id="btn-manual-black" class="btn dark">Nikdo neuhodl (Šedé pole)</button>
+                            <button id="btn-manual-blue" class="btn info">🔵 Modrý tým</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
