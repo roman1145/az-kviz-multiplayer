@@ -1,99 +1,146 @@
-/* Základní nastavení pro celou stránku */
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f0f2f5;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f3f4f6;
     margin: 0;
-    padding: 20px 10px;
+    padding: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    box-sizing: border-box;
 }
 
-/* Kontejner, který drží hru uprostřed obrazovky PC i mobilu */
 .game-container {
-    text-align: center;
     background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
     width: 100%;
-    max-width: 500px; /* Aby hra na PC nebyla obří a na mobilu se vešla */
-    box-sizing: border-box;
+    max-width: 750px;
+    text-align: center;
 }
 
-h1 {
-    color: #333;
-    margin-top: 0;
-    margin-bottom: 10px;
-}
+h1 { color: #1f2937; margin-bottom: 5px; }
+.subtitle { color: #6b7280; margin-bottom: 30px; }
 
-#status-bar {
-    background-color: #e9ecef;
-    padding: 10px;
-    border-radius: 6px;
+/* Tlačítka */
+.btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
     font-weight: bold;
-    margin-bottom: 20px;
-    transition: all 0.3s ease;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn.primary { background: #3b82f6; color: white; }
+.btn.secondary { background: #4b5563; color: white; }
+.btn.success { background: #10b981; color: white; }
+.btn.danger { background: #ef4444; color: white; }
+.btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* Úvodní rozcestník */
+.intro-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+.intro-card {
+    border: 1px solid #e5e7eb;
+    padding: 30px;
+    border-radius: 12px;
+    background: #f9fafb;
 }
 
-/* Prostor pro pyramidu */
+/* Průvodce tvorbou kvízu */
+.creator-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    margin-top: 25px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
+.creator-tile {
+    padding: 15px;
+    background: #f3f4f6;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+.creator-tile.filled {
+    background: #e0f2fe;
+    border: 2px solid #3b82f6;
+    color: #0369a1;
+}
+
+/* Modální okno */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+.modal-content {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    text-align: left;
+}
+.modal-content textarea, .modal-content input {
+    width: 100%; padding: 10px; margin: 8px 0 20px 0;
+    border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box;
+}
+
+/* ŠÉSTIUHELNÍKOVÁ PYRAMIDA (AZ-Kvíz design) */
 #az-pyramid {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px; /* Mezera mezi řadami */
-    margin-top: 20px;
-    margin-bottom: 20px;
+    margin: 30px 0;
 }
-
-/* Každá jednotlivá řada v pyramidě */
 .pyramid-row {
     display: flex;
     justify-content: center;
-    gap: 6px; /* Mezera mezi políčky vedle sebe */
+    margin-bottom: -8px; /* Překrytí řad pro správný tvar medové plástve */
 }
-
-/* Styl pro jedno herní políčko */
 .tile {
-    width: 45px;
-    height: 45px;
-    background-color: #dee2e6; /* Výchozí šedivá barva */
-    color: #333;
+    width: 54px;
+    height: 62px;
+    background: #ffffff;
+    border: 2px solid #111827;
+    color: #111827;
     font-weight: bold;
+    font-size: 18px;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    user-select: none;
-    transition: all 0.2s ease;
-    
-    /* Trik s oříznutím: udělá z obyčejného čtverce trojúhelník mířící nahoru */
-    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-    
-    /* Posunutí čísla trochu dolů, aby bylo uprostřed trojúhelníku */
-    padding-top: 10px; 
-    box-sizing: border-box;
+    margin: 0 3px;
+    /* Vytvoření hexagonu pomocí clip-path */
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    transition: all 0.2s;
+}
+.tile:hover { transform: scale(1.08); z-index: 10; }
+
+/* Týmové barvy z obrázků */
+.tile.player1 { background: #dc2626; color: white; border-color: #991b1b; } /* Červený tým */
+.tile.player2 { background: #2563eb; color: white; border-color: #1e40af; } /* Modrý tým */
+.tile.black   { background: #4b5563; color: white; border-color: #1f2937; } /* Šedé/zamčené pole */
+
+#status-bar {
+    padding: 12px; border-radius: 8px; font-weight: bold; font-size: 16px; margin-bottom: 20px;
 }
 
-/* Když se na políčko najede myší na PC */
-.tile:hover {
-    background-color: #ced4da;
-    transform: scale(1.05);
+.question-box {
+    background: #1f2937; color: white; padding: 25px; border-radius: 12px; margin-top: 25px;
 }
-
-/* Barvy pro herní stavy */
-.tile.player1 { background-color: #ff8c00; color: white; } /* Oranžová Hráč 1 */
-.tile.player2 { background-color: #007bff; color: white; } /* Modrá Hráč 2 */
-.tile.black   { background-color: #343a40; color: white; } /* Černá (zamčená) */
-
-/* Přizpůsobení pro extra malé mobily */
-@media (max-width: 380px) {
-    .tile {
-        width: 38px;
-        height: 38px;
-        font-size: 14px;
-        padding-top: 8px;
-    }
+#game-player-answer {
+    padding: 10px; width: 60%; border-radius: 6px; border: none; margin-right: 10px;
 }

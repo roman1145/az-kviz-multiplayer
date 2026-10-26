@@ -3,41 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiplayer AZ-Kvíz</title>
+    <title>Interaktivní AZ-Kvíz</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="game-container">
-        <h1>Online AZ-Kvíz</h1>
-        
-        <div id="status-bar">Čekání na start hry...</div>
-
-        <div id="az-pyramid">
-            <!-- Políčka vygenerujeme později přes JavaScript -->
-        </div>
-
-        <!-- Sekce pro otázku -->
-        <div id="question-box" style="display: none; margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px;">
-            <h3 id="question-title">Otázka</h3>
-            <p id="question-text">Zde bude text otázky...</p>
-            <div id="answer-zone">
-                <input type="text" id="player-answer" placeholder="Napište odpověď..." style="padding: 8px; width: 70%; border: 1px solid #ccc; border-radius: 4px;">
-                <button id="submit-answer-btn" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Odeslat</button>
+        <!-- 1. ÚVODNÍ OBRAZOVKA -->
+        <div id="screen-intro" class="screen">
+            <h1>AZ-KVÍZ</h1>
+            <p class="subtitle">Vytvořte si vlastní kvíz, hrajte online na 2 zařízeních s přáteli.</p>
+            
+            <div class="intro-grid">
+                <div class="intro-card setup">
+                    <h3>➕ Vytvořit nový AZ-kvíz</h3>
+                    <button id="btn-create-quiz" class="btn primary">Vytvořit kvíz</button>
+                </div>
+                <div class="intro-card upload">
+                    <h3>📤 Nahrát ze souboru</h3>
+                    <label class="btn secondary">
+                        Vybrat soubor (JSON)
+                        <input type="file" id="upload-questions-input" accept=".json" style="display: none;">
+                    </label>
+                </div>
             </div>
         </div>
 
-        <!-- Správa otázek (Admin sekce) -->
-        <div class="admin-section" style="margin-top: 30px; border-top: 2px dashed #ccc; padding-top: 20px; text-align: left;">
-            <h3>⚙️ Správa otázek pro hru</h3>
-            <div style="margin-bottom: 15px;">
-                <button id="download-questions-btn" style="padding: 8px 12px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">📥 Stáhnout otázky (JSON)</button>
-                <label style="padding: 8px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; display: inline-block;">
-                    📤 Nahrát otázky (JSON)
-                    <input type="file" id="upload-questions-input" accept=".json" style="display: none;">
-                </label>
+        <!-- 2. PRŮVODCE TVORBOU OTÁZEK -->
+        <div id="screen-creator" class="screen" style="display: none;">
+            <h2>Krok 2: Hlavní otázky (28)</h2>
+            <div class="creator-actions">
+                <button id="btn-download-json" class="btn success">💾 Uložit do souboru</button>
+                <button id="btn-start-game" class="btn primary" style="display: none;">🎮 Přejít ke hře</button>
             </div>
-            <div id="questions-edit-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f8f9fa; border-radius: 4px;"></div>
+            <div id="creator-grid" class="creator-grid"></div>
+        </div>
+
+        <!-- MODÁLNÍ OKNO PRO ZÁPIS JEDNÉ OTÁZKY -->
+        <div id="creator-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h3 id="modal-title">Nová: Otázka č. 1</h3>
+                <label>Znění otázky *</label>
+                <textarea id="input-q-text" placeholder="Např. Jak se jmenuje nejdelší řeka protékající Českou republikou?"></textarea>
+                <label>Správná odpověď *</label>
+                <input type="text" id="input-q-answer" placeholder="Např. Vltava">
+                <div class="modal-buttons">
+                    <button id="btn-modal-cancel" class="btn danger">Zrušit</button>
+                    <button id="btn-modal-save" class="btn success">✔️ Uložit otázku</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. HERNÍ OBRAZOVKA (MULTIPLAYER) -->
+        <div id="screen-game" class="screen" style="display: none;">
+            <div id="status-bar">Čekání na připojení hráčů...</div>
+            
+            <!-- Herní deska z šestiúhelníků -->
+            <div id="az-pyramid"></div>
+
+            <!-- Box s aktivní otázkou během hry -->
+            <div id="game-question-box" class="question-box" style="display: none;">
+                <h3 id="game-question-title">Otázka č. X</h3>
+                <p id="game-question-text">Text...</p>
+                <div id="game-answer-zone">
+                    <input type="text" id="game-player-answer" placeholder="Napište odpověď...">
+                    <button id="btn-game-submit" class="btn success">Odeslat</button>
+                </div>
+            </div>
         </div>
     </div>
 

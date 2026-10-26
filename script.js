@@ -1,185 +1,223 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Inicializace síťového propojení (bude funkční, až spustíme server)
-    const socket = typeof io !== 'undefined' ? io() : null;
+    const socket = io();
 
-    const pyramidContainer = document.getElementById("az-pyramid");
+    // Obrazovky
+    const screenIntro = document.getElementById("screen-intro");
+    const screenCreator = document.getElementById("screen-creator");
+    const screenGame = document.getElementById("screen-game");
+    
+    // Bloky a UI
+    const creatorGrid = document.getElementById("creator-grid");
+    const azPyramid = document.getElementById("az-pyramid");
     const statusBar = document.getElementById("status-bar");
-    const questionBox = document.getElementById("question-box");
-    const questionTitle = document.getElementById("question-title");
-    const questionText = document.getElementById("question-text");
-    const playerAnswerInput = document.getElementById("player-answer");
-    const submitAnswerBtn = document.getElementById("submit-answer-btn");
-    const questionsEditList = document.getElementById("questions-edit-list");
-    const downloadBtn = document.getElementById("download-questions-btn");
-    const uploadInput = document.getElementById("upload-questions-input");
-
-    let currentPlayer = 1;
-    let tileNumber = 1;
-    const tileElements = {}; 
-    let activeTileId = null;
-
-    // Lokální databáze 28 otázek (výchozí texty)
+    const gameQuestionBox = document.getElementById("game-question-box");
+    
     let gameQuestions = {};
-    for (let i = 1; i <= 28; i++) {
-        gameQuestions[i] = {
-            otazka: `Zadejte text otázky pro políčko číslo ${i} v admin sekci dole.`,
-            odpoved: `odpoved${i}`
-        };
+    let tileElements = {};
+    let activeTileId = null;
+    let currentCreatorTileIndex = null;
+    let currentPlayer = 1;
+
+    // Inicializace prázdných 28 otázek
+    for(let i=1; i<=28; i++) {
+        gameQuestions[i] = { otazka: "", odpoved: "" };
     }
 
-    // Vygenerování formulářů pro úpravu otázek v administraci dole na webu
-    function generateAdminQuestionsList() {
-        questionsEditList.innerHTML = "";
-        for (let i = 1; i <= 28; i++) {
-            const row = document.createElement("div");
-            row.style.marginBottom = "10px";
-            row.style.display = "flex";
-            row.style.flexDirection = "column";
-            row.style.borderBottom = "1px solid #eee";
-            row.style.paddingBottom = "5px";
+    // ALGORITMUS: Levenshteinova vzdálenost pro kontrolu překlepů
+    function checkAnswerWithTolerance(userAns, correctAns) {
+        const s1 = userAns.trim().toLowerCase();
+        const s2 = correctAns.trim().toLowerCase();
+        
+        if (s1 === s2) return true;
 
-            row.innerHTML = `
-                <strong>Políčko ${i}:</strong>
-                <input type="text" data-id="${i}" data-type="otazka" value="${gameQuestions[i].otazka}" placeholder="Otázka" style="margin: 2px 0; padding: 4px;">
-                <input type="text" data-id="${i}" data-type="odpoved" value="${gameQuestions[i].odpoved}" placeholder="Správná odpověď" style="margin: 2px 0; padding: 4px; font-weight: bold;">
-            `;
-            questionsEditList.appendChild(row);
+        // Výpočet matice změn
+        const costs = [];
+        for (let i = 0; i <= s1.length; i++) {
+            let lastValue = i;
+            for (let j = 0; j <= s2.length; j++) {
+                if (i == 0) costs[j] = j;
+                else {
+                    if (j > 0) {
+                        let newValue = costs[j - 1];
+                        if (s1.charAt(i - 1) != s2.charAt(j - 1))
+                            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                        costs[j - 1] = lastValue;
+                        lastValue = newValue;
+                    }
+                }
+            }
+            if (i > 0) costs[s2.length] = lastValue;
         }
-
-        // Automatické ukládání změn z políček do paměti prohlížeče
-        questionsEditList.querySelectorAll("input").forEach(input => {
-            input.addEventListener("input", (e) => {
-                const id = e.target.getAttribute("data-id");
-                const type = e.target.getAttribute("data-type");
-                gameQuestions[id][type] = e.target.value;
-            });
-        });
+        
+        const distance = costs[s2.length];
+        
+        // Tolerance: 1 překlep pro slova do 5 znaků, max 2 překlepy pro delší slova
+        if (s2.length <= 5 && distance <= 1) return true;
+        if (s2.length > 5 && distance <= 2) return true;
+        
+        return false;
     }
-    generateAdminQuestionsList();
 
-    // 📥 EXPORT: Tlačítko pro stažení otázek do .json souboru v PC [filegen-via-code]
-    downloadBtn.addEventListener("click", () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(gameQuestions, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", "az_kviz_otazky.json");
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
+    // PŘEPÍNAČE OBRAZOVEK
+    document.getElementById("btn-create-quiz").addEventListener("click", () => {
+        screenIntro.style.display = "none";
+        screenCreator.style.display = "block";
+        drawCreatorGrid();
     });
 
-    // 📤 IMPORT: Tlačítko pro nahrání staženého souboru s otázkami zpět do hry
-    uploadInput.addEventListener("change", (e) => {
+    // Vykreslení mřížky pro tvorbu otázek (Krok 2)
+    function drawCreatorGrid() {
+        creatorGrid.innerHTML = "";
+        let filledCount = 0;
+        for(let i=1; i<=28; i++) {
+            const tile = document.createElement("div");
+            tile.classList.add("creator-tile");
+            tile.innerText = `Políčko ${i}`;
+            if(gameQuestions[i].otazka !== "") {
+                tile.classList.add("filled");
+                filledCount++;
+            }
+            tile.addEventListener("click", () => openModal(i));
+            creatorGrid.appendChild(tile);
+        }
+        if(filledCount === 28) {
+            document.getElementById("btn-start-game").style.display = "inline-block";
+        }
+    }
+
+    // MODÁLNÍ OKNO - UKLÁDÁNÍ OTÁZEK
+    function openModal(index) {
+        currentCreatorTileIndex = index;
+        document.getElementById("modal-title").innerText = `Nová: Otázka č. ${index}`;
+        document.getElementById("input-q-text").value = gameQuestions[index].otazka;
+        document.getElementById("input-q-answer").value = gameQuestions[index].odpoved;
+        document.getElementById("creator-modal").style.style.display = "flex";
+    }
+
+    document.getElementById("btn-modal-save").addEventListener("click", () => {
+        const txt = document.getElementById("input-q-text").value.trim();
+        const ans = document.getElementById("input-q-answer").value.trim();
+        if(!txt || !ans) return alert("Vyplňte prosím znění i odpověď!");
+        
+        gameQuestions[currentCreatorTileIndex] = { otazka: txt, odpoved: ans };
+        document.getElementById("creator-modal").style.display = "none";
+        drawCreatorGrid();
+    });
+
+    document.getElementById("btn-modal-cancel").addEventListener("click", () => {
+        document.getElementById("creator-modal").style.display = "none";
+    });
+
+    // STÁHNUTÍ OTÁZEK (EXPORT) [filegen-via-code]
+    document.getElementById("btn-download-json").addEventListener("click", () => {
+        const blob = new Blob([JSON.stringify(gameQuestions, null, 2)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "az_kviz_export.json";
+        a.click();
+    });
+
+    // NAHRÁNÍ OTÁZEK (IMPORT)
+    document.getElementById("upload-questions-input").addEventListener("change", (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if(!file) return;
         const reader = new FileReader();
         reader.onload = (event) => {
-            try {
-                const parsed = JSON.parse(event.target.result);
-                if (Object.keys(parsed).length === 28) {
-                    gameQuestions = parsed;
-                    generateAdminQuestionsList();
-                    alert("Otázky byly úspěšně nahrány do hry!");
-                } else {
-                    alert("Chyba: Soubor musí obsahovat přesně 28 otázek.");
-                }
-            } catch (err) {
-                alert("Nepovedlo se načíst soubor. Ujistěte se, že jde o správný JSON formát.");
-            }
+            gameQuestions = JSON.parse(event.target.result);
+            screenIntro.style.display = "none";
+            screenCreator.style.display = "block";
+            drawCreatorGrid();
         };
         reader.readAsText(file);
     });
 
-    // Aktualizace barvy horního panelu podle hráče na řadě
-    function updateStatusBar(player) {
-        currentPlayer = player;
-        if (currentPlayer === 1) {
-            statusBar.innerText = "Na řadě je: HRÁČ 1 (Oranžový)";
-            statusBar.style.backgroundColor = "#ffe8cc";
-            statusBar.style.color = "#ff8c00";
-        } else {
-            statusBar.innerText = "Na řadě je: HRÁČ 2 (Modrý)";
-            statusBar.style.backgroundColor = "#e7f5ff";
-            statusBar.style.color = "#007bff";
-        }
-    }
-    updateStatusBar(1);
-
-    // Vykreslení pyramidy (7 řad)
-    for (let row = 1; row <= 7; row++) {
-        const rowElement = document.createElement("div");
-        rowElement.classList.add("pyramid-row");
-
-        for (let col = 1; col <= row; col++) {
-            const tile = document.createElement("div");
-            tile.classList.add("tile");
-            tile.innerText = tileNumber;
-            tileElements[tileNumber] = tile;
-
-            // Kliknutí na políčko desky
-            tile.addEventListener("click", () => {
-                if (tile.classList.contains("player1") || tile.classList.contains("player2") || tile.classList.contains("black")) {
-                    return;
-                }
-
-                // Otevření okna s otázkou
-                activeTileId = tile.innerText;
-                questionTitle.innerText = `Políčko číslo ${activeTileId}`;
-                questionText.innerText = gameQuestions[activeTileId].otazka;
-                playerAnswerInput.value = "";
-                questionBox.style.display = "block";
-                playerAnswerInput.focus();
-            });
-
-            rowElement.appendChild(tile);
-            tileNumber++;
-        }
-        pyramidContainer.appendChild(rowElement);
-    }
-
-    // Vyhodnocení zadané odpovědi po kliknutí na tlačítko Odeslat
-    submitAnswerBtn.addEventListener("click", () => {
-        if (!activeTileId) return;
-
-        const userAnswer = playerAnswerInput.value.trim().toLowerCase();
-        const correctAnswer = gameQuestions[activeTileId].odpoved.trim().toLowerCase();
-
-        let status = 'black'; // Výchozí stav při chybě (černá)
-        
-        if (userAnswer === correctAnswer) {
-            status = currentPlayer === 1 ? 'player1' : 'player2';
-            alert("Správná odpověď! Získáváte políčko.");
-        } else {
-            alert(`Špatná odpověď! Políčko se zamyká. Správná odpověď byla: ${gameQuestions[activeTileId].odpoved}`);
-        }
-
-        // Pokud je server aktivní, pošleme stav tam, jinak aplikujeme lokálně (pro testování)
-        if (socket) {
-            socket.emit('tile-clicked', { tileId: activeTileId, status: status });
-        } else {
-            // Nouzový lokální režim bez serveru
-            tileElements[activeTileId].classList.add(status);
-            updateStatusBar(currentPlayer === 1 ? 2 : 1);
-        }
-        
-        questionBox.style.display = "none";
-        activeTileId = null;
+    // PŘECHOD DO HRY
+    document.getElementById("btn-start-game").addEventListener("click", () => {
+        screenCreator.style.display = "none";
+        screenGame.style.display = "block";
+        buildHexPyramid();
+        socket.emit("sync-questions", gameQuestions);
     });
 
-    // Příjem zpráv ze serveru (pro multiplayer v reálném čase)
-    if (socket) {
-        socket.on('init-state', (data) => {
-            updateStatusBar(data.currentPlayer);
-            for (const id in data.tileStates) {
-                if (tileElements[id]) tileElements[id].className = 'tile ' + data.tileStates[id];
-            }
-        });
+    // VYSTAVĚNÍ ŠÉSTIUHELNÍKOVÉ PYRAMIDY
+    function buildHexPyramid() {
+        azPyramid.innerHTML = "";
+        let idCounter = 1;
+        for (let row = 1; row <= 7; row++) {
+            const rowDiv = document.createElement("div");
+            rowDiv.classList.add("pyramid-row");
+            for (let col = 1; col <= row; col++) {
+                const tile = document.createElement("div");
+                tile.classList.add("tile");
+                tile.innerText = idCounter;
+                tileElements[idCounter] = tile;
 
-        socket.on('state-updated', (data) => {
-            updateStatusBar(data.currentPlayer);
-            for (const id in data.tileStates) {
-                if (tileElements[id]) tileElements[id].className = 'tile ' + data.tileStates[id];
+                tile.addEventListener("click", () => {
+                    if(tile.className !== "tile") return;
+                    socket.emit("tile-selected-live", tile.innerText);
+                });
+
+                rowDiv.appendChild(tile);
+                idCounter++;
             }
-        });
+            azPyramid.appendChild(rowDiv);
+        }
+    }
+
+    // MULTIPLAYER OVLÁDÁNÍ
+    document.getElementById("btn-game-submit").addEventListener("click", () => {
+        const playerAns = document.getElementById("game-player-answer").value;
+        const correctAns = gameQuestions[activeTileId].odpoved;
+        
+        let targetStatus = "black";
+        if(checkAnswerWithTolerance(playerAns, correctAns)) {
+            targetStatus = currentPlayer === 1 ? "player1" : "player2";
+        }
+
+        socket.emit("tile-processed-live", { tileId: activeTileId, status: targetStatus });
+        gameQuestionBox.style.display = "none";
+    });
+
+    // SÍŤOVÁ SYNCHRONIZACE REÁLNÉHO ČASU
+    socket.on("init-state", (data) => {
+        currentPlayer = data.currentPlayer;
+        updateStatusBarUI();
+    });
+
+    socket.on("questions-broadcast", (questions) => {
+        gameQuestions = questions;
+        if(screenGame.style.display === "none") {
+            screenIntro.style.display = "none";
+            screenCreator.style.display = "none";
+            screenGame.style.display = "block";
+            buildHexPyramid();
+        }
+    });
+
+    socket.on("open-question-screen", (tileId) => {
+        activeTileId = tileId;
+        document.getElementById("game-question-title").innerText = `Otázka pro políčko č. ${tileId}`;
+        document.getElementById("game-question-text").innerText = gameQuestions[tileId].otazka;
+        document.getElementById("game-player-answer").value = "";
+        gameQuestionBox.style.display = "block";
+    });
+
+    socket.on("state-updated", (data) => {
+        currentPlayer = data.currentPlayer;
+        updateStatusBarUI();
+        for (const id in data.tileStates) {
+            if (tileElements[id]) tileElements[id].className = 'tile ' + data.tileStates[id];
+        }
+    });
+
+    function updateStatusBarUI() {
+        if (currentPlayer === 1) {
+            statusBar.innerText = "Na řadě je: ČERVENÝ TÝM";
+            statusBar.style.background = "#fee2e2"; statusBar.style.color = "#dc2626";
+        } else {
+            statusBar.innerText = "Na řadě je: MODRÝ TÝM";
+            statusBar.style.background = "#dbeafe"; statusBar.style.color = "#2563eb";
+        }
     }
 });
