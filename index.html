@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer AZ-Kvíz</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>Online AZ-Kvíz</h1>
+        
+        <div id="status-bar">Čekání na start hry...</div>
+
+        <div id="az-pyramid">
+            <!-- Políčka vygenerujeme později přes JavaScript -->
+        </div>
+
+        <!-- Sekce pro otázku -->
+        <div id="question-box" style="display: none; margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px;">
+            <h3 id="question-title">Otázka</h3>
+            <p id="question-text">Zde bude text otázky...</p>
+            <div id="answer-zone">
+                <input type="text" id="player-answer" placeholder="Napište odpověď..." style="padding: 8px; width: 70%; border: 1px solid #ccc; border-radius: 4px;">
+                <button id="submit-answer-btn" style="padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Odeslat</button>
+            </div>
+        </div>
+
+        <!-- Správa otázek (Admin sekce) -->
+        <div class="admin-section" style="margin-top: 30px; border-top: 2px dashed #ccc; padding-top: 20px; text-align: left;">
+            <h3>⚙️ Správa otázek pro hru</h3>
+            <div style="margin-bottom: 15px;">
+                <button id="download-questions-btn" style="padding: 8px 12px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">📥 Stáhnout otázky (JSON)</button>
+                <label style="padding: 8px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; display: inline-block;">
+                    📤 Nahrát otázky (JSON)
+                    <input type="file" id="upload-questions-input" accept=".json" style="display: none;">
+                </label>
+            </div>
+            <div id="questions-edit-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #f8f9fa; border-radius: 4px;"></div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

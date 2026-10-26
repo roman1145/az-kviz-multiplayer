@@ -1,0 +1,99 @@
+/* Základní nastavení pro celou stránku */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 20px 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* Kontejner, který drží hru uprostřed obrazovky PC i mobilu */
+.game-container {
+    text-align: center;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 500px; /* Aby hra na PC nebyla obří a na mobilu se vešla */
+    box-sizing: border-box;
+}
+
+h1 {
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+#status-bar {
+    background-color: #e9ecef;
+    padding: 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+/* Prostor pro pyramidu */
+#az-pyramid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px; /* Mezera mezi řadami */
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* Každá jednotlivá řada v pyramidě */
+.pyramid-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px; /* Mezera mezi políčky vedle sebe */
+}
+
+/* Styl pro jedno herní políčko */
+.tile {
+    width: 45px;
+    height: 45px;
+    background-color: #dee2e6; /* Výchozí šedivá barva */
+    color: #333;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    
+    /* Trik s oříznutím: udělá z obyčejného čtverce trojúhelník mířící nahoru */
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    
+    /* Posunutí čísla trochu dolů, aby bylo uprostřed trojúhelníku */
+    padding-top: 10px; 
+    box-sizing: border-box;
+}
+
+/* Když se na políčko najede myší na PC */
+.tile:hover {
+    background-color: #ced4da;
+    transform: scale(1.05);
+}
+
+/* Barvy pro herní stavy */
+.tile.player1 { background-color: #ff8c00; color: white; } /* Oranžová Hráč 1 */
+.tile.player2 { background-color: #007bff; color: white; } /* Modrá Hráč 2 */
+.tile.black   { background-color: #343a40; color: white; } /* Černá (zamčená) */
+
+/* Přizpůsobení pro extra malé mobily */
+@media (max-width: 380px) {
+    .tile {
+        width: 38px;
+        height: 38px;
+        font-size: 14px;
+        padding-top: 8px;
+    }
+}
